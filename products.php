@@ -7,7 +7,10 @@
  */
 
 require_once 'vendor/autoload.php';
-include_once './mysqlConnection.php';
+require_once './Pager.php';
+require_once './mysqlConnection.php';
+error_reporting(E_ALL);
+ini_set('display_errors', 'On');
 
 // Necessary headers
 header('Access-Control-Allow-Origin: *');
@@ -28,18 +31,17 @@ $app = new \Slim\Slim();
 /**
  * Get all product list
  */
-$app->get('/products',function() use ($db_connection,$app) {
-    $query = "SELECT * FROM products";
-    $result = $db_connection->query($query,PDO::FETCH_OBJ);
+$app->get('/products/page/:page/limit/:limit', function($page, $limit) {
+    $result = Pager::select(intval($page),intval($limit));
     echo json_encode($result->fetchAll());
 });
 
 /**
  * URL for get a product by id
  */
-$app->get('/products/:id_product',function($id_product) use ($db_connection,$app) {
+$app->get('/products/:id_product',function($id_product) {
     $query = "SELECT * FROM products WHERE idProduct=:id_product";
-    $read_task = $db_connection->prepare($query);
+    $read_task = Connexion::getInstance()->connect()->prepare($query);
     $read_task->bindValue(':id_product',$id_product,PDO::PARAM_INT);
     $read_task->execute();
     echo json_encode($read_task->fetchObject());
@@ -48,18 +50,15 @@ $app->get('/products/:id_product',function($id_product) use ($db_connection,$app
 /**
  * URL for get a list of products by category
  */
-$app->get('/products/category/:id_category',function($id_category) use ($db_connection,$app) {
-    $query = "SELECT * FROM products WHERE idCategory=:id_category";
-    $read_task = $db_connection->prepare($query);
-    $read_task->bindValue(':id_category',$id_category,PDO::PARAM_INT);
-    $read_task->execute();
-    echo json_encode($read_task->fetchAll());
+$app->get('/products/category/:id_category/page/:page/limit/:limit',function($id_category,$page,$limit) {
+    $result = Pager::selectBy(intval($id_category),intval($page),intval($limit));
+    echo json_encode($result->fetchAll());
 });
 
 /**
  * URL for add products
  */
-$app->post("/products",function() use ($db_connection,$app) {
+$app->post("/products",function() use ($app) {
     $data_request = $app->request->post('data_request');
     $array_data = json_decode($data_request,true);
 
@@ -67,7 +66,7 @@ $app->post("/products",function() use ($db_connection,$app) {
                     idProduct,name,price,description,url_img,idCategory
                 )
                 VALUES (DEFAULT ,:name,:price,:description,:url_img,:id_category);";
-    $insert_task = $db_connection->prepare($query);
+    $insert_task = Connexion::getInstance()->connect()->prepare($query);
 
     try {
         $insert_task->bindValue(':name',       $array_data['_name'],       PDO::PARAM_STR);
@@ -104,12 +103,12 @@ $app->post("/products",function() use ($db_connection,$app) {
 /**
  * URL for update products
  */
-$app->put("/products/:id_product",function($id_product) use ($db_connection, $app) {
+$app->put("/products/:id_product",function($id_product) use ($app) {
     $data_request = $app->request->post("data_request");
     $array_data = json_decode($data_request,true);
 
     $query = "UPDATE product SET name=:name, description=:description, price=:price, url_image=:url_image WHERE id=:id;";
-    $update_task = $db_connection->prepare($query);
+    $update_task = Connexion::getInstance()->connect()->prepare($query);
     try {
         $update_task->bindValue(':name',       $array_data['name'],       PDO::PARAM_STR);
         $update_task->bindValue(':description',$array_data['description'],PDO::PARAM_STR);
@@ -139,9 +138,9 @@ $app->put("/products/:id_product",function($id_product) use ($db_connection, $ap
 /**
  *  URL for delete products
  */
-$app->delete('/products/:id_product',function($id_product) use ($db_connection,$app){
+$app->delete('/products/:id_product',function($id_product) use ($app){
     $query = "DELETE FROM product WHERE id=:id_product";
-    $delete_task = $db_connection->prepare($query);
+    $delete_task = Connexion::getInstance()->connect()->prepare($query);
 
     try {
         $delete_task->bindValue(':id_product',$id_product,PDO::PARAM_INT);
@@ -165,25 +164,7 @@ $app->delete('/products/:id_product',function($id_product) use ($db_connection,$
     echo json_encode($result);
 });
 
-/**
- * URL from upload an image to a product
- */
-$app->post('/upload_image',function() use ($db_connection,$app){
-    $response_params = array(
-        'success_code'    => 201,
-        'success_message' => 'File uploaded successfully',
-        'error_code'      => '400',
-        'error_message'   => 'File not uploaded. Please check required data and retry'
-    );
-    $piramideUploader = new piramideUploader();
-    $upload = $piramideUploader->upload('image',"upload","upload",array('image/jpeg','image/png','image/gif'));
-    $file = $piramideUploader->getInfoFile();
-    $file_name = $file['complete_name'];
 
-    $upload_status = evaluateOperation((isset($upload) && $upload['uploaded']),$response_params);
-
-    echo json_encode($result);
-});
 
 /**
  * @param string $type_operation CRUD operation type

@@ -6,8 +6,11 @@
  * Time: 01:40 AM
  */
 
+error_reporting(E_ALL);
+ini_set('display_errors', 'On');
+
 require_once 'vendor/autoload.php';
-include_once './mysqlConnection.php';
+require_once 'mysqlConnection.php';
 
 // Necessary headers
 header('Content-type: application/json; charset=utf-8');
@@ -27,9 +30,9 @@ $app = new \Slim\Slim();
 /**
  * Get all category list
  */
-$app->get('/categories',function() use ($db_connection,$app) {
+$app->get('/categories',function() use ($app) {
     $query = "SELECT * FROM category;";
-    $result = $db_connection->query($query,PDO::FETCH_OBJ);
+    $result = Connexion::getInstance()->connect()->query($query,PDO::FETCH_OBJ);
     echo json_encode($result->fetchAll());
 });
 
