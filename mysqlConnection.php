@@ -8,9 +8,9 @@
 
 class Connexion {
     private $servername;
-    public $bdd;
-    public $username;
-    public $password;
+    private $bdd;
+    private $username;
+    private $password;
     private static $_instance;
 
     private function __construct(){
@@ -18,6 +18,7 @@ class Connexion {
         $this->bdd = "cabreras1u_bikeeShop";
         $this->username = "cabreras1u_appli";
         $this->password = "31723548";
+        self::$_instance = null;
     }
 
     public static function getInstance()

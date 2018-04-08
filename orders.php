@@ -30,7 +30,7 @@ $app->post("/orders",function() use ($app) {
     $user = $data_request['user'];
 
     $db_connection = Connexion::getInstance()->connect();
-
+    
     // inserting user in 'users' table
     $query = "INSERT INTO user (idUser, name, lastname, addresse, email)
                 VALUES (DEFAULT, :name, :lastname, :address, :email)";
@@ -53,7 +53,7 @@ $app->post("/orders",function() use ($app) {
     $insert_task->bindValue(':payment', $total_price, PDO::PARAM_STR);
     $insert_task->execute();
     $id_order = $db_connection->lastInsertId();
-
+    
     // inserting products in 'description_order' table
     $rows_inserted = 0;
     $index = 0;
@@ -72,6 +72,11 @@ $app->post("/orders",function() use ($app) {
             $rows_inserted ++;
         }
         $index ++;
+
+        // updating product quantity for each one
+        $query = "UPDATE products SET quantity = IFNULL(quantity,1) - 1 WHERE idProduct = $data";
+        $insert_task = $db_connection->prepare($query);
+        $insert_task->execute();
     }
 
     $result = [
