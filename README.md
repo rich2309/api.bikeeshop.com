@@ -6,7 +6,7 @@ Ce projet est la partie webservice du projet [bikeeshop.com](https://github.com/
 > - PHP 7.1
 > - Slim Framework v2
 
-## Exigences de l'application
+## Exigences minimales de l'application
 > - PHP 7.1
 > - Apache Server
 > - Composer
